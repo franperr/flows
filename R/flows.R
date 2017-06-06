@@ -558,7 +558,7 @@ plotDomFlows <- function(mat, legend.flows.pos = "topright",
   # Dominé
   vertexdf[(degree(g, mode = "in") < 1) & (degree(g, mode = "out") > 0), "col"] <- "yellow"
   vertexdf[(degree(g, mode = "in") < 1) & (degree(g, mode = "out") > 0), "size"] <- 2
-
+  
   V(g)$color <- vertexdf$col
   V(g)$size <- vertexdf$size
   V(g)$names <- as.character(vertexdf$name)
@@ -579,13 +579,78 @@ plotDomFlows <- function(mat, legend.flows.pos = "topright",
                   varvect = c(min(E(g)$weight),max(E(g)$weight)),
                   sizevect = c(2, 10), col = "black",
                   frame = FALSE, round = 0)
-
-
+  
+  
   legend(x = legend.nodes.pos, legend = legend.node.txt,
          cex = c(0.8), pt.cex = c(2.8,2,1,0), bty = "n",
          pt.bg = c("red", "orange", "yellow", NA),
          pch = c(21,21,21,21))
+  
+}
 
+
+#' @title Dominant Flows Graph Data
+#' @name plotDomFlowsData
+#' @description This function plots a dominant flows graph.
+#' @param mat A square matrix of dominant flows (see \link{domflows}).
+#' @param legend.flows.pos Position of the flows legend, one of "topleft", "top",
+#' "topright", "left", "right", "bottomleft", "bottom", "bottomright".
+#' @param legend.flows.title Title of the flows legend.
+#' @param legend.nodes.pos Position of the nodes legend, one of "topleft", "top",
+#' "topright", "left", "right", "bottomleft", "bottom", "bottomright".
+#' @param legend.node.txt Text of the nodes legend.
+#' @param labels A boolean, if TRUE, labels of dominant and intermediary nodes are plotted.
+#' @note As square matrices can easily be plot with \link[igraph]{plot.igraph} or
+#' \link[sna]{gplot} functions from igraph and sna packages, we do not propose
+#' visualisation for other outputs. Return only the data
+#' @seealso \link{domflows}, \link{plotMapDomFlowsData}
+#' @import graphics
+#' @importFrom igraph "V" "E" "V<-" "E<-" "degree"
+#' @examples
+#' # Import data
+#' data(nav)
+#' myflows <- prepflows(mat = nav, i = "i", j = "j", fij = "fij")
+#'
+#' # Remove the matrix diagonal
+#' diag(myflows) <- 0
+#'
+#' # Select the dominant flows (incoming flows criterion)
+#' flowSel1 <- domflows(mat = myflows, w = colSums(myflows), k = 1)
+#' # Select the first flows
+#' flowSel2 <- firstflows(mat = myflows, method = "nfirst", ties.method = "first",
+#'                        k = 1)
+#'
+#' # Combine selections
+#' flowSel <- myflows * flowSel1 * flowSel2
+#'
+#' # Plot dominant flows graph
+#' plotDomFlows(mat = flowSel, legend.flows.title = "Nb. of commuters")
+#' @export
+plotDomFlowsData <- function(mat, legend.flows.pos = "topright",
+                         legend.flows.title = "Flows Intensity",
+                         legend.nodes.pos = "bottomright",
+                         legend.node.txt = c("Dominant", "Intermediary",
+                                             "Dominated",
+                                             "Size proportional\nto sum of inflows"),
+                         labels = FALSE){
+  g <- igraph::graph.adjacency(adjmatrix = mat,mode = "directed", weighted = TRUE)
+  g <- igraph::delete.vertices(g, names(degree(g)[degree(g)==0]))
+  vertexdf <-  data.frame(id = V(g)$name, col = NA, size = NA, name = NA)
+  # Dominant
+  vertexdf[(degree(g, mode = "in") > 0) & (degree(g, mode = "out") < 1), "col"] <- "red"
+  vertexdf[(degree(g, mode = "in") > 0) & (degree(g, mode = "out") < 1), "size"] <- 6
+  vertexdf[(degree(g, mode = "in") > 0) & (degree(g, mode = "out") < 1), "name"] <-
+    as.character(vertexdf[(degree(g, mode = "in") > 0) & (degree(g, mode = "out") < 1), "id"])
+  # intermediaire
+  vertexdf[(degree(g, mode = "in") > 0) & (degree(g, mode = "out") > 0), "col"] <- "orange"
+  vertexdf[(degree(g, mode = "in") > 0) & (degree(g, mode = "out") > 0), "size"] <- 4
+  vertexdf[(degree(g, mode = "in") > 0) & (degree(g, mode = "out") > 0), "name"]<-
+    as.character(vertexdf[(degree(g, mode = "in") > 0) & (degree(g, mode = "out") > 0), "id"])
+  # Dominé
+  vertexdf[(degree(g, mode = "in") < 1) & (degree(g, mode = "out") > 0), "col"] <- "yellow"
+  vertexdf[(degree(g, mode = "in") < 1) & (degree(g, mode = "out") > 0), "size"] <- 2
+  
+  return(vertexdf)
 }
 
 #' @title Dominant Flows Map
